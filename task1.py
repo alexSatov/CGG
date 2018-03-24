@@ -58,7 +58,7 @@ class Task1(QWidget):
         width, height, a, b, f = args
         ymin, ymax, fx, fy = self.calculate(f, width, a, b)
         chart = self.get_chart(a, ymin, ymax, width, height, fx, fy)
-        chart = self.add_axis_and_grid(chart, fx, ymin, ymax)
+        chart = self.add_axis_and_grid(chart, fx, ymin, ymax, 'X', 'Y')
 
         return chart
 
@@ -102,7 +102,7 @@ class Task1(QWidget):
         painter = QPainter(background)
 
         self.draw_grid(painter, size, args)
-        self.draw_axis(painter, size, 'X', 'Y')
+        self.draw_axis(painter, size, args)
 
         painter.end()
 
@@ -114,7 +114,7 @@ class Task1(QWidget):
         step = self.grid_step
         width, height = size
         offset_x, offset_y = self.offset
-        fx, ymin, ymax = args
+        fx, ymin, ymax, _, _ = args
         chart_height = height - offset_y * 2
 
         painter.setPen(QPen(Qt.gray, 1))
@@ -133,9 +133,10 @@ class Task1(QWidget):
             painter.drawLine(offset_x, yy, width - offset_x, yy)
             painter.drawText(rect, Qt.AlignRight, '%.2f' % y)
 
-    def draw_axis(self, painter, size, h_name, v_name):
+    def draw_axis(self, painter, size, args):
         width, height = size
         offset_x, offset_y = self.offset
+        h_name, v_name = args[-2], args[-1]
         oxy, oyx = height - offset_y, offset_x
 
         painter.setPen(QPen(Qt.black, 2))
