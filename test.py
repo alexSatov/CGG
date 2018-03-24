@@ -1,2 +1,11 @@
-for x in range(100, 0, -10):
-    print(x)
+class A:
+    x = 1
+
+
+class B:
+    y = 1
+
+
+a = [A, B]
+
+print(a[0]())

@@ -22,8 +22,8 @@ class OptionsBar(QWidget):
 
         return self
 
-    def with_interval(self):
-        self.interval = IntervalOptions()
+    def with_interval(self, alpha=1, beta=10):
+        self.interval = IntervalOptions(alpha, beta)
         self.layout.addLayout(self.interval)
 
         return self
@@ -69,10 +69,10 @@ class AreaOptions(QHBoxLayout):
 
 
 class IntervalOptions(QVBoxLayout):
-    def __init__(self):
+    def __init__(self, alpha, beta):
         super().__init__()
-        self.alpha = IntOption('α', 1)
-        self.beta = IntOption('β', 10)
+        self.alpha = IntOption('α', alpha)
+        self.beta = IntOption('β', beta)
 
         self.addLayout(self.alpha)
         self.addLayout(self.beta)
