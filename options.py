@@ -28,8 +28,8 @@ class OptionsBar(QWidget):
 
         return self
 
-    def with_int_option(self, name, min=-1000, max=1000):
-        option = IntOption(name, min, max)
+    def with_int_option(self, name, default=0, min=-10000, max=10000):
+        option = IntOption(name, default, min, max)
 
         self.options.append(option)
         self.layout.addLayout(option)
@@ -56,8 +56,8 @@ class AreaOptions(QHBoxLayout):
     def init_ui(self):
         self.left_top.x = IntOption('leftTopX')
         self.left_top.y = IntOption('leftTopY')
-        self.right_bottom.x = IntOption('rightBottomX')
-        self.right_bottom.y = IntOption('rightBottomY')
+        self.right_bottom.x = IntOption('rightBottomX', 400)
+        self.right_bottom.y = IntOption('rightBottomY', 400)
 
         self.left_top.addLayout(self.left_top.x)
         self.left_top.addLayout(self.left_top.y)
@@ -71,19 +71,20 @@ class AreaOptions(QHBoxLayout):
 class IntervalOptions(QVBoxLayout):
     def __init__(self):
         super().__init__()
-        self.alpha = IntOption('α')
-        self.beta = IntOption('β')
+        self.alpha = IntOption('α', 1)
+        self.beta = IntOption('β', 10)
 
         self.addLayout(self.alpha)
         self.addLayout(self.beta)
 
 
 class IntOption(QHBoxLayout):
-    def __init__(self, name, min=-1000, max=1000):
+    def __init__(self, name, default=0, min=-10000, max=10000):
         super().__init__()
         self.name = name
         self.validator = QIntValidator(min, max)
         self.input = QLineEdit()
+        self.input.setText(str(default))
         self.input.setMaximumWidth(60)
         self.input.setValidator(self.validator)
         self.setContentsMargins(0, 0, 20, 0)
