@@ -27,7 +27,8 @@ class Task1(QWidget):
             .with_interval() \
             .with_int_option('a', 1) \
             .with_int_option('b', 0) \
-            .with_button('Нарисовать', self.draw_chart)
+            .with_button('Нарисовать', self.draw_chart) \
+            .with_image('images\\task1.png')
 
         self.setLayout(self.v_layout)
 

@@ -1,4 +1,4 @@
-from PyQt5.QtGui import QIntValidator
+from PyQt5.QtGui import QIntValidator, QPixmap
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QWidget, QLineEdit, QVBoxLayout, QHBoxLayout, \
     QLabel, QPushButton, QLayout
@@ -42,6 +42,15 @@ class OptionsBar(QWidget):
 
         self.buttons.append(button)
         self.layout.addWidget(button)
+
+        return self
+
+    def with_image(self, path):
+        pixmap = QPixmap(path)
+        label = QLabel()
+        label.setPixmap(pixmap)
+
+        self.layout.addWidget(label)
 
         return self
 

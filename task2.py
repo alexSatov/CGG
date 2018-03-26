@@ -27,7 +27,8 @@ class Task2(Task1):
             .with_area() \
             .with_interval(0, 360) \
             .with_int_option('a', 1) \
-            .with_button('Нарисовать', self.draw_chart)
+            .with_button('Нарисовать', self.draw_chart) \
+            .with_image('images\\task2.png')
 
         self.setLayout(self.v_layout)
 
