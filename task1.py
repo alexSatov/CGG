@@ -1,27 +1,25 @@
 from math import inf
+from typing import Dict
 
-from options import OptionsBar
-from chartArea import ChartArea
-
-from PyQt5.QtGui import QImage, QPainter, QPen, QFont
+from PyQt5.QtGui import QPainter, QPen, QFont
 from PyQt5.QtCore import Qt, QPoint, QRect
-from PyQt5.QtWidgets import QWidget, QVBoxLayout
+
+from task import Task, Func
+from chart import Chart, IGridPainter, Offset, ChartBackground
+
+Cache = Dict[float, float]
 
 
-class Task1(QWidget):
+class Task1(Task):
     def __init__(self, main_window):
         super().__init__(main_window)
-        self.main_window = main_window
-        self.offset = 80, 40
-        self.grid_step = 40
-        self.chart_area = ChartArea(self)
-        self.options_bar = OptionsBar(self)
-        self.v_layout = QVBoxLayout()
-        self.v_layout.addWidget(self.options_bar)
-        self.v_layout.addWidget(self.chart_area)
+        self.f_xx_x: Cache = {}
+        self.f_x_y: Cache = {}
+        self.min_y: float = inf
+        self.max_y: float = -inf
         self.init_ui()
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         self.options_bar \
             .with_area() \
             .with_interval() \
@@ -30,58 +28,44 @@ class Task1(QWidget):
             .with_button('Нарисовать', self.draw_chart) \
             .with_image('images\\task1.png')
 
-        self.setLayout(self.v_layout)
-
-    def draw_chart(self):
-        args = self.parse_input()
-
-        if not self.valid(args):
-            return
-
-        chart = self.create_chart(args)
-
-        self.chart_area.set_chart(chart)
-
-    def parse_input(self):
+    def parse_input(self) -> None:
         ox = int(self.options_bar.area.left_top.x.input.text())
         oy = int(self.options_bar.area.left_top.y.input.text())
-        maxx = int(self.options_bar.area.right_bottom.x.input.text())
-        maxy = int(self.options_bar.area.right_bottom.y.input.text())
+        max_x = int(self.options_bar.area.right_bottom.x.input.text())
+        max_y = int(self.options_bar.area.right_bottom.y.input.text())
         alpha = int(self.options_bar.interval.alpha.input.text())
         beta = int(self.options_bar.interval.beta.input.text())
         a = int(self.options_bar.options[0].input.text())
         b = int(self.options_bar.options[1].input.text())
-        f = self.create_func(a, b)
 
-        return maxx - ox, maxy - oy, alpha, beta, f
+        self.width = max_x - ox
+        self.height = max_y - oy
+        self.alpha = alpha
+        self.beta = beta
+        self.f = Task1.create_func(a, b)
 
-    def create_chart(self, args):
-        width, height, a, b, f = args
-        ymin, ymax, fx, fy = self.calculate(f, width, a, b)
-        chart = self.get_chart(a, ymin, ymax, width, height, fx, fy)
-        chart = self.add_axis_and_grid(chart, fx, ymin, ymax, 'X', 'Y')
+    def create_chart(self) -> Chart:
+        self.calculate()
 
-        return chart
+        chart = Chart(self.width, self.height)
+        painter = chart.get_painter()
 
-    def get_chart(self, *args):
-        a, ymin, ymax, maxx, maxy, fx, fy = args
-        chart = QImage(maxx, maxy, QImage.Format_ARGB32)
-        painter = QPainter(chart)
-        painter.setPen(QPen(Qt.blue, 3))
-
-        if ymax == ymin:
-            self.draw_constant_chart(painter, maxx, maxy, fx, fy)
+        if self.min_y == self.max_y:
+            self.draw_constant_chart(painter)
+            self.add_background(chart)
             painter.end()
 
             return chart
 
-        yy = (fy[a] - ymax) * maxy / (ymin - ymax)
+        dy = self.max_y - self.min_y
+        y = self.f_x_y[self.alpha]
+        yy = (self.max_y - y) * self.height / dy
         current_point = QPoint(0, yy)
 
-        for xx in range(1, maxx):
-            x = fx[xx]
-            y = fy[x]
-            yy = (y - ymax) * maxy / (ymin - ymax) if y != inf else inf
+        for xx in range(1, self.width):
+            x = self.f_xx_x[xx]
+            y = self.f_x_y[x]
+            yy = (self.max_y - y) * self.height / dy if y != inf else inf
             move_point = QPoint(xx, round(yy)) if yy != inf else None
 
             if None not in (current_point, move_point):
@@ -89,84 +73,49 @@ class Task1(QWidget):
 
             current_point = move_point
 
+        self.add_background(chart)
         painter.end()
 
         return chart
 
-    def add_axis_and_grid(self, chart, *args):
-        offset_x, offset_y = self.offset
-        size = chart.width() + offset_x * 2, chart.height() + offset_y * 2
+    def add_background(self, chart: Chart) -> None:
+        background = ChartBackground(chart)
+        grid_painter = GridPainter(self, background.offset)
 
-        background = QImage(size[0], size[1], QImage.Format_ARGB32)
-        background.fill(Qt.white)
+        background.update(grid_painter)
+        chart.with_background(background.image)
 
-        painter = QPainter(background)
+    def calculate(self) -> None:
+        for xx in range(0, self.width):
+            x = self.alpha + xx * (self.beta - self.alpha) / self.width
+            y = self.f(x)
+            self.f_xx_x[xx] = x
+            self.f_x_y[x] = y
 
-        self.draw_grid(painter, size, args)
-        self.draw_axis(painter, size, args)
+            if y == inf:
+                continue
+            if y < self.min_y:
+                self.min_y = y
+            if y > self.max_y:
+                self.max_y = y
 
-        painter.end()
+    def draw_constant_chart(self, painter: QPainter) -> None:
+        yy = round(self.height / 2)
 
-        self.insert(chart, background)
+        painter.drawLine(0, yy, self.width, yy)
+        painter.setPen(QPen(Qt.white, 2))
 
-        return background
+        for x, y in self.f_x_y.items():
+            if y != inf:
+                continue
 
-    def draw_grid(self, painter, size, args):
-        step = self.grid_step
-        width, height = size
-        offset_x, offset_y = self.offset
-        fx, ymin, ymax, _, _ = args
-        chart_height = height - offset_y * 2
-
-        painter.setPen(QPen(Qt.gray, 1))
-        painter.setFont(QFont('Arial', 8))
-
-        for xx in range(offset_x, width - offset_x, step):
-            rect = QRect(xx - step / 2, height - offset_y + 8, step, 14)
-            painter.drawLine(xx, offset_y, xx, height - offset_y)
-            painter.drawText(rect, Qt.AlignHCenter, '%.2f' % fx[xx - offset_x])
-
-        for yy in range(offset_y, height - offset_y, step):
-            yy = height - yy
-            rect = QRect(0, yy - 7, offset_x - 8, 14)
-            y = ((yy - offset_y) * (ymin - ymax) / chart_height) + ymax if \
-                ymin != ymax else (chart_height / 2 - yy + offset_y) + ymax
-            painter.drawLine(offset_x, yy, width - offset_x, yy)
-            painter.drawText(rect, Qt.AlignRight, '%.2f' % y)
-
-    def draw_axis(self, painter, size, args):
-        width, height = size
-        offset_x, offset_y = self.offset
-        h_name, v_name = args[-2], args[-1]
-        oxy, oyx = height - offset_y, offset_x
-
-        painter.setPen(QPen(Qt.black, 2))
-        painter.setFont(QFont('Arial', 10, 75))
-
-        painter.drawLine(offset_x, oxy, width, oxy)
-        painter.drawLine(width, oxy, width - 10, oxy - 4)
-        painter.drawLine(width, oxy, width - 10, oxy + 4)
-        painter.drawText(width - 20, height - offset_y + 20, h_name)
-
-        painter.drawLine(oyx, height - offset_y, oyx, 0)
-        painter.drawLine(oyx, 0, oyx - 4, 10)
-        painter.drawLine(oyx, 0, oyx + 4, 10)
-        painter.drawText(offset_x + 10, 15, v_name)
-
-    def insert(self, chart, back):
-        offset_x, offset_y = self.offset
-        width, height = chart.width(), chart.height()
-
-        for x in range(width):
-            for y in range(height):
-                color = chart.pixelColor(x, y)
-
-                if color == Qt.blue:
-                    back.setPixelColor(x + offset_x, y + offset_y, color)
+            for xx in self.f_xx_x.keys():
+                if x == self.f_xx_x[xx]:
+                    painter.drawPoint(xx, yy)
 
     @staticmethod
-    def create_func(a, b):
-        def f(x):
+    def create_func(a: int, b: int) -> Func:
+        def f(x: float) -> float:
             try:
                 return ((a + x) / (b - x)) ** 4
             except ZeroDivisionError:
@@ -174,42 +123,33 @@ class Task1(QWidget):
 
         return f
 
-    @staticmethod
-    def valid(args):
-        width, height, a, b, _ = args
 
-        return width > 0 and height > 0 and b > a
+class GridPainter(IGridPainter):
+    def __init__(self, task: Task1, offset: Offset):
+        self.task = task
+        self.offset = offset
 
-    @staticmethod
-    def calculate(f, maxx, a, b):
-        ymin = inf
-        ymax = -inf
-        fx, fy = {}, {}
+    def draw(self, painter: QPainter, step: int = 40) -> None:
+        dy = self.task.min_y - self.task.max_y
+        is_constant = self.task.min_y == self.task.max_y
+        right_border = self.task.width + self.offset.x
+        bottom_border = self.task.height + self.offset.y
 
-        for xx in range(0, maxx):
-            x = a + xx * (b - a) / maxx
-            y = f(x)
-            fx[xx] = x
-            fy[x] = y
+        painter.setPen(QPen(Qt.gray, 1))
+        painter.setFont(QFont('Arial', 8))
 
-            if y == inf:
-                continue
-            if y < ymin:
-                ymin = y
-            if y > ymax:
-                ymax = y
+        for xx in range(self.offset.x, right_border, step):
+            x = self.task.f_xx_x[xx - self.offset.x]
+            rect = QRect(xx - step / 2, bottom_border + 8, step, 14)
+            painter.drawLine(xx, self.offset.y, xx, bottom_border)
+            painter.drawText(rect, Qt.AlignHCenter, '%.2f' % x)
 
-        return ymin, ymax, fx, fy
-
-    @staticmethod
-    def draw_constant_chart(painter, maxx, maxy, fx, fy):
-        yy = round(maxy / 2)
-
-        painter.drawLine(0, yy, maxx, yy)
-        painter.setPen(QPen(Qt.white, 2))
-
-        for x, y in fy.items():
-            if y == inf:
-                for xx in fx.keys():
-                    if x == fx[xx]:
-                        painter.drawPoint(xx, yy)
+        for yy in range(self.offset.y, bottom_border, step):
+            yy = self.task.height + self.offset.y - yy
+            back_yy = yy + self.offset.y
+            rect = QRect(0, back_yy - 7, self.offset.x - 8, 14)
+            y = (yy * dy / self.task.height) + self.task.max_y \
+                if not is_constant else \
+                (self.task.height / 2 - yy) + self.task.max_y
+            painter.drawLine(self.offset.x, back_yy, right_border, back_yy)
+            painter.drawText(rect, Qt.AlignRight, '%.2f' % y)

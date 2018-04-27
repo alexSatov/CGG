@@ -1,4 +1,6 @@
 import sys
+from typing import Callable
+
 from task1 import Task1
 from task2 import Task2
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction
@@ -10,31 +12,24 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("КГГ")
         self.setGeometry(200, 120, 1000, 700)
         self.tasks = [Task1, Task2]
-        self.task = self.tasks[0](self)
-        self.setCentralWidget(self.task)
+        self.setCentralWidget(self.tasks[0](self))
         self.init_ui()
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         menu_bar = self.menuBar()
         task_menu = menu_bar.addMenu('&Задача')
 
-        task1 = QAction('Задача 1', self)
-        task1.setShortcut('Ctrl+1')
-        task1.triggered.connect(self.set_task(0))
-
-        task2 = QAction('Задача 2', self)
-        task2.setShortcut('Ctrl+2')
-        task2.triggered.connect(self.set_task(1))
-
-        task_menu.addAction(task1)
-        task_menu.addAction(task2)
+        for i in range(len(self.tasks)):
+            task = QAction(f'Задача {i + 1}', self)
+            task.setShortcut(f'Ctrl+{i + 1}')
+            task.triggered.connect(self.set_task(i))
+            task_menu.addAction(task)
 
         self.show()
 
-    def set_task(self, index):
-        def set_task_of_index():
-            self.task = self.tasks[index]
-            self.setCentralWidget(self.task(self))
+    def set_task(self, index: int) -> Callable[[], None]:
+        def set_task_of_index() -> None:
+            self.setCentralWidget(self.tasks[index](self))
 
         return set_task_of_index
 
