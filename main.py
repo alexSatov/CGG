@@ -3,6 +3,7 @@ from typing import Callable
 
 from task1 import Task1
 from task2 import Task2
+from task3 import Task3
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction
 
 
@@ -11,8 +12,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("КГГ")
         self.setGeometry(200, 120, 1000, 700)
-        self.tasks = [Task1, Task2]
-        self.setCentralWidget(self.tasks[0](self))
+        self.tasks = [Task1, Task2, Task3]
+        self.setCentralWidget(self.tasks[2](self))
         self.init_ui()
 
     def init_ui(self) -> None:

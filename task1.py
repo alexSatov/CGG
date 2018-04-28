@@ -13,10 +13,10 @@ Cache = Dict[float, float]
 class Task1(Task):
     def __init__(self, main_window):
         super().__init__(main_window)
-        self.f_xx_x: Cache = {}
-        self.f_x_y: Cache = {}
-        self.min_y: float = inf
-        self.max_y: float = -inf
+        self.f_xx_x: Cache = None
+        self.f_x_y: Cache = None
+        self.min_y: float = None
+        self.max_y: float = None
         self.init_ui()
 
     def init_ui(self) -> None:
@@ -80,6 +80,9 @@ class Task1(Task):
         return chart
 
     def calculate(self) -> None:
+        self.f_xx_x, self.f_x_y = {}, {}
+        self.min_y, self.max_y = inf, -inf
+
         for xx in range(0, self.width):
             x = self.alpha + xx * (self.beta - self.alpha) / self.width
             y = self.f(x)
