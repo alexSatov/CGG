@@ -1,6 +1,6 @@
 from typing import Callable
 
-from chart import ChartArea
+from chart import ChartArea, Chart
 from options import OptionsBar
 
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
@@ -37,5 +37,5 @@ class Task(QWidget):
     def validate(self) -> bool:
         return self.width > 0 and self.height > 0 and self.beta > self.alpha
 
-    def create_chart(self):
+    def create_chart(self) -> Chart:
         raise NotImplementedError()

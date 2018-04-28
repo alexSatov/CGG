@@ -10,7 +10,7 @@ class Offset:
 
 
 class IGridPainter:
-    def draw(self, painter: QPainter, step: int = 40):
+    def draw(self, painter: QPainter, step: int = 40) -> None:
         raise NotImplementedError()
 
 
@@ -23,14 +23,28 @@ class Chart:
         self.pen_size = pen_size
         self.image_format = image_format
         self.image = QImage(width, height, image_format)
+        self._painter: QPainter = None
 
-    def get_painter(self) -> QPainter:
-        painter = QPainter(self.image)
-        painter.setPen(QPen(self.color, self.pen_size))
+    @property
+    def painter(self) -> QPainter:
+        self._painter = QPainter(self.image)
+        self._painter.setPen(QPen(self.color, self.pen_size))
 
-        return painter
+        return self._painter
 
-    def with_background(self, background: QImage) -> None:
+    def add_background(self, background: QImage, offset: Offset) -> None:
+        if self._painter:
+            self._painter.end()
+
+        chart = self.image
+
+        for x in range(self.width):
+            for y in range(self.height):
+                color = chart.pixelColor(x, y)
+
+                if color == self.color:
+                    background.setPixelColor(x + offset.x, y + offset.y, color)
+
         self.image = background
 
 
@@ -47,7 +61,7 @@ class ChartArea(QScrollArea):
         self.image_label.setPixmap(QPixmap(chart.image))
 
 
-class ChartBackground:
+class ChartBackgroundPainter:
     def __init__(self, chart: Chart, offset: Offset = Offset(80, 40),
                  h_axis: str = 'x', v_axis: str = 'y'):
         self.h_axis = h_axis
@@ -57,17 +71,17 @@ class ChartBackground:
         self.size = QSize(chart.width + offset.x * 2,
                           chart.height + offset.y * 2)
 
-        self.image = QImage(self.size, self.chart.image_format)
+    def draw(self, grid_painter: IGridPainter) -> None:
+        background = QImage(self.size, self.chart.image_format)
+        background.fill(Qt.white)
+        painter = QPainter(background)
 
-    def update(self, grid_painter: IGridPainter) -> None:
-        painter = QPainter(self.image)
-
-        self.image.fill(Qt.white)
         grid_painter.draw(painter)
         self.draw_axis(painter)
-        self.insert_chart()
 
         painter.end()
+
+        self.chart.add_background(background, self.offset)
 
     def draw_axis(self, painter: QPainter) -> None:
         width, height = self.size.width(), self.size.height()
@@ -85,12 +99,3 @@ class ChartBackground:
         painter.drawLine(oyx, 0, oyx - 4, 10)
         painter.drawLine(oyx, 0, oyx + 4, 10)
         painter.drawText(self.offset.x + 10, 15, self.v_axis)
-
-    def insert_chart(self) -> None:
-        for x in range(self.chart.width):
-            for y in range(self.chart.height):
-                color = self.chart.image.pixelColor(x, y)
-
-                if color == self.chart.color:
-                    self.image.setPixelColor(x + self.offset.x,
-                                             y + self.offset.y, color)

@@ -1,9 +1,11 @@
-from math import sqrt, cos, sin, radians, fabs
+from math import radians as rad
+from math import sqrt, cos, sin, fabs
 
-from task1 import Task1
+from chart import Chart, IGridPainter, Offset, ChartBackgroundPainter
+from task import Task, Func
 
-from PyQt5.QtGui import QImage, QPainter, QPen
 from PyQt5.QtCore import Qt, QRect
+from PyQt5.QtGui import QPainter, QPen
 
 
 class PixelPoint:
@@ -11,18 +13,19 @@ class PixelPoint:
         self.x = round(x * unit)
         self.y = round(y * unit)
 
-    def get_distance(self, other):
+    def get_distance(self, other: 'PixelPoint') -> float:
         return sqrt((self.x - other.x) ** 2 + (self.y - other.y) ** 2)
 
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y
 
 
-class Task2(Task1):
+class Task2(Task):
     def __init__(self, main_window):
         super().__init__(main_window)
+        self.init_ui()
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         self.options_bar \
             .with_area() \
             .with_interval(0, 360) \
@@ -30,34 +33,26 @@ class Task2(Task1):
             .with_button('Нарисовать', self.draw_chart) \
             .with_image('images\\task2.png')
 
-        self.setLayout(self.v_layout)
-
-    def parse_input(self):
+    def parse_input(self) -> None:
         ox = int(self.options_bar.area.left_top.x.input.text())
         oy = int(self.options_bar.area.left_top.y.input.text())
-        maxx = int(self.options_bar.area.right_bottom.x.input.text())
-        maxy = int(self.options_bar.area.right_bottom.y.input.text())
+        max_x = int(self.options_bar.area.right_bottom.x.input.text())
+        max_y = int(self.options_bar.area.right_bottom.y.input.text())
         alpha = int(self.options_bar.interval.alpha.input.text())
         beta = int(self.options_bar.interval.beta.input.text())
         a = int(self.options_bar.options[0].input.text())
-        r = self.create_func(a)
 
-        return maxx - ox, maxy - oy, alpha, beta, r
+        self.width = max_x - ox
+        self.height = max_y - oy
+        self.alpha = alpha
+        self.beta = beta
+        self.f = Task2.create_func(a)
 
-    def create_chart(self, args):
-        chart = self.get_chart(args)
-        chart = self.add_axis_and_grid(chart, 'φ', 'r')
-
-        return chart
-
-    def get_chart(self, args):
-        rad = radians
-        width, height, u0, u1, r = args
-        x0, y0, unit, = width // 2, height // 2, self.grid_step
-        chart = QImage(width, height, QImage.Format_ARGB32)
-        painter = QPainter(chart)
-        painter.setPen(QPen(Qt.blue, 3))
-
+    def create_chart(self) -> Chart:
+        u0, u1, r = self.alpha, self.beta, self.f
+        x0, y0, unit = self.width // 2, self.height // 2, 40
+        chart = Chart(self.width, self.height)
+        painter = chart.painter
         u, du, d, a, b = u0, 1, 10, 3, 2
         ru = r(u) if not None else None
         point = PixelPoint(ru * cos(rad(u)), ru * sin(rad(u)), unit) if \
@@ -97,42 +92,50 @@ class Task2(Task1):
 
             painter.drawLine(xx0, yy0, xx1, yy1)
 
-        painter.end()
+        back_painter = ChartBackgroundPainter(chart, h_axis='r', v_axis='φ')
+        grid_painter = GridPainter(self, back_painter.offset)
+        back_painter.draw(grid_painter)
 
         return chart
 
-    def draw_grid(self, painter, size, args):
-        step = self.grid_step
-        offset_x, offset_y = self.offset
-        width, height = size
-        x0, y0 = width / 2, height / 2
-
-        painter.setPen(QPen(Qt.gray, 1))
-
-        for i in range(int((x0 - offset_x) / step) + 1):
-            xxs = [x0] if i == 0 else [x0 - i * step, x0 + i * step]
-
-            for xx in xxs:
-                x = -i if xx < x0 else i
-                rect = QRect(xx - step / 2, height - offset_y + 8, step, 14)
-                painter.drawLine(xx, offset_y, xx, height - offset_y)
-                painter.drawText(rect, Qt.AlignHCenter, str(x))
-
-        for i in range(int((y0 - offset_y) / step) + 1):
-            yys = [y0] if i == 0 else [y0 - i * step, y0 + i * step]
-
-            for yy in yys:
-                y = -i if yy > y0 else i
-                rect = QRect(0, yy - 7, offset_x - 8, 14)
-                painter.drawLine(offset_x, yy, width - offset_x, yy)
-                painter.drawText(rect, Qt.AlignRight, str(y))
-
     @staticmethod
-    def create_func(a, b=None):
+    def create_func(a: int) -> Func:
         def r(u):
             try:
-                return a / (sqrt(cos(3 * radians(u))))
+                return a / (sqrt(cos(3 * rad(u))))
             except ValueError:
                 return None
 
         return r
+
+
+class GridPainter(IGridPainter):
+    def __init__(self, task: Task2, offset: Offset):
+        self.task = task
+        self.offset = offset
+
+    def draw(self, painter: QPainter, step: int = 40) -> None:
+        width, height = self.task.width + self.offset.x * 2, \
+                        self.task.height + self.offset.y * 2
+        x0, y0 = width / 2, height / 2
+        bottom_border = height - self.offset.y
+
+        painter.setPen(QPen(Qt.gray, 1))
+
+        for i in range(int((x0 - self.offset.x) / step) + 1):
+            xxs = [x0] if i == 0 else [x0 - i * step, x0 + i * step]
+
+            for xx in xxs:
+                x = -i if xx < x0 else i
+                rect = QRect(xx - step / 2, bottom_border + 8, step, 14)
+                painter.drawLine(xx, self.offset.y, xx, bottom_border)
+                painter.drawText(rect, Qt.AlignHCenter, str(x))
+
+        for i in range(int((y0 - self.offset.y) / step) + 1):
+            yys = [y0] if i == 0 else [y0 - i * step, y0 + i * step]
+
+            for yy in yys:
+                y = -i if yy > y0 else i
+                rect = QRect(0, yy - 7, self.offset.x - 8, 14)
+                painter.drawLine(self.offset.x, yy, width - self.offset.x, yy)
+                painter.drawText(rect, Qt.AlignRight, str(y))

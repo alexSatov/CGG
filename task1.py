@@ -5,7 +5,7 @@ from PyQt5.QtGui import QPainter, QPen, QFont
 from PyQt5.QtCore import Qt, QPoint, QRect
 
 from task import Task, Func
-from chart import Chart, IGridPainter, Offset, ChartBackground
+from chart import Chart, IGridPainter, Offset, ChartBackgroundPainter
 
 Cache = Dict[float, float]
 
@@ -48,12 +48,12 @@ class Task1(Task):
         self.calculate()
 
         chart = Chart(self.width, self.height)
-        painter = chart.get_painter()
+        painter = chart.painter
 
         if self.min_y == self.max_y:
             self.draw_constant_chart(painter)
-            self.add_background(chart)
             painter.end()
+            self.add_background(chart)
 
             return chart
 
@@ -73,17 +73,11 @@ class Task1(Task):
 
             current_point = move_point
 
-        self.add_background(chart)
-        painter.end()
+        back_painter = ChartBackgroundPainter(chart)
+        grid_painter = GridPainter(self, back_painter.offset)
+        back_painter.draw(grid_painter)
 
         return chart
-
-    def add_background(self, chart: Chart) -> None:
-        background = ChartBackground(chart)
-        grid_painter = GridPainter(self, background.offset)
-
-        background.update(grid_painter)
-        chart.with_background(background.image)
 
     def calculate(self) -> None:
         for xx in range(0, self.width):
@@ -126,30 +120,33 @@ class Task1(Task):
 
 class GridPainter(IGridPainter):
     def __init__(self, task: Task1, offset: Offset):
-        self.task = task
+        self.min_y = task.min_y
+        self.max_y = task.max_y
+        self.width = task.width
+        self.height = task.height
+        self.f_xx_x = task.f_xx_x
         self.offset = offset
 
     def draw(self, painter: QPainter, step: int = 40) -> None:
-        dy = self.task.min_y - self.task.max_y
-        is_constant = self.task.min_y == self.task.max_y
-        right_border = self.task.width + self.offset.x
-        bottom_border = self.task.height + self.offset.y
+        dy = self.min_y - self.max_y
+        is_constant = self.min_y == self.max_y
+        right_border = self.width + self.offset.x
+        bottom_border = self.height + self.offset.y
 
         painter.setPen(QPen(Qt.gray, 1))
         painter.setFont(QFont('Arial', 8))
 
         for xx in range(self.offset.x, right_border, step):
-            x = self.task.f_xx_x[xx - self.offset.x]
+            x = self.f_xx_x[xx - self.offset.x]
             rect = QRect(xx - step / 2, bottom_border + 8, step, 14)
             painter.drawLine(xx, self.offset.y, xx, bottom_border)
             painter.drawText(rect, Qt.AlignHCenter, '%.2f' % x)
 
         for yy in range(self.offset.y, bottom_border, step):
-            yy = self.task.height + self.offset.y - yy
+            yy = self.height + self.offset.y - yy
             back_yy = yy + self.offset.y
             rect = QRect(0, back_yy - 7, self.offset.x - 8, 14)
-            y = (yy * dy / self.task.height) + self.task.max_y \
-                if not is_constant else \
-                (self.task.height / 2 - yy) + self.task.max_y
+            y = (yy * dy / self.height) + self.max_y if not is_constant else \
+                (self.height / 2 - yy) + self.max_y
             painter.drawLine(self.offset.x, back_yy, right_border, back_yy)
             painter.drawText(rect, Qt.AlignRight, '%.2f' % y)
