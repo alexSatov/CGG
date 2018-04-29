@@ -1,11 +1,11 @@
 from math import radians as rad
 from math import sqrt, cos, sin, fabs
 
-from chart import Chart, IGridPainter, Offset, ChartBackgroundPainter
-from task import Task, Func
-
 from PyQt5.QtCore import Qt, QRect
 from PyQt5.QtGui import QPainter, QPen
+
+from chart import Chart, IGridPainter, Offset, ChartBackgroundPainter
+from task import Task, Func
 
 
 class PixelPoint:
@@ -28,7 +28,7 @@ class Task2(Task):
     def init_ui(self) -> None:
         self.options_bar \
             .with_area() \
-            .with_interval(0, 360) \
+            .with_int_options_v(0, 360) \
             .with_int_option('a', 1) \
             .with_button('Нарисовать', self.draw_chart) \
             .with_image('images\\task2.png')
@@ -38,21 +38,19 @@ class Task2(Task):
         oy = int(self.options_bar.area.left_top.y.input.text())
         max_x = int(self.options_bar.area.right_bottom.x.input.text())
         max_y = int(self.options_bar.area.right_bottom.y.input.text())
-        alpha = int(self.options_bar.interval.alpha.input.text())
-        beta = int(self.options_bar.interval.beta.input.text())
+        self.alpha = int(self.options_bar.v_options[0].top.input.text())
+        self.beta = int(self.options_bar.v_options[0].bottom.input.text())
         a = int(self.options_bar.options[0].input.text())
 
         self.width = max_x - ox
         self.height = max_y - oy
-        self.alpha = alpha
-        self.beta = beta
         self.f = Task2.create_func(a)
 
     def create_chart(self) -> Chart:
         u0, u1, r = self.alpha, self.beta, self.f
         x0, y0, unit = self.width // 2, self.height // 2, 40
         chart = Chart(self.width, self.height)
-        painter = chart.painter
+        painter = chart.create_painter()
         u, du, d, a, b = u0, 1, 10, 3, 2
         ru = r(u) if not None else None
         point = PixelPoint(ru * cos(rad(u)), ru * sin(rad(u)), unit) if \
@@ -113,11 +111,12 @@ class GridPainter(IGridPainter):
     def __init__(self, task: Task2, offset: Offset):
         self.task = task
         self.offset = offset
+        self.step = 40
 
     def draw(self, painter: QPainter, step: int = 40) -> None:
         width, height = self.task.width + self.offset.x * 2, \
                         self.task.height + self.offset.y * 2
-        x0, y0 = width / 2, height / 2
+        x0, y0, step = width / 2, height / 2, self.step
         bottom_border = height - self.offset.y
 
         painter.setPen(QPen(Qt.gray, 1))

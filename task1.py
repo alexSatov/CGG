@@ -1,11 +1,11 @@
 from math import inf
 from typing import Dict
 
-from PyQt5.QtGui import QPainter, QPen, QFont
 from PyQt5.QtCore import Qt, QPoint, QRect
+from PyQt5.QtGui import QPainter, QPen, QFont
 
-from task import Task, Func
 from chart import Chart, IGridPainter, Offset, ChartBackgroundPainter
+from task import Task, Func
 
 Cache = Dict[float, float]
 
@@ -22,7 +22,7 @@ class Task1(Task):
     def init_ui(self) -> None:
         self.options_bar \
             .with_area() \
-            .with_interval() \
+            .with_int_options_v() \
             .with_int_option('a', 1) \
             .with_int_option('b', 0) \
             .with_button('Нарисовать', self.draw_chart) \
@@ -33,22 +33,20 @@ class Task1(Task):
         oy = int(self.options_bar.area.left_top.y.input.text())
         max_x = int(self.options_bar.area.right_bottom.x.input.text())
         max_y = int(self.options_bar.area.right_bottom.y.input.text())
-        alpha = int(self.options_bar.interval.alpha.input.text())
-        beta = int(self.options_bar.interval.beta.input.text())
+        self.alpha = int(self.options_bar.v_options[0].top.input.text())
+        self.beta = int(self.options_bar.v_options[0].bottom.input.text())
         a = int(self.options_bar.options[0].input.text())
         b = int(self.options_bar.options[1].input.text())
 
         self.width = max_x - ox
         self.height = max_y - oy
-        self.alpha = alpha
-        self.beta = beta
         self.f = Task1.create_func(a, b)
 
     def create_chart(self) -> Chart:
         self.calculate()
 
         chart = Chart(self.width, self.height)
-        painter = chart.painter
+        painter = chart.create_painter()
 
         if self.min_y == self.max_y:
             self.draw_constant_chart(painter)
@@ -129,8 +127,10 @@ class GridPainter(IGridPainter):
         self.height = task.height
         self.f_xx_x = task.f_xx_x
         self.offset = offset
+        self.step = 40
 
-    def draw(self, painter: QPainter, step: int = 40) -> None:
+    def draw(self, painter: QPainter) -> None:
+        step = self.step
         dy = self.min_y - self.max_y
         is_constant = self.min_y == self.max_y
         right_border = self.width + self.offset.x

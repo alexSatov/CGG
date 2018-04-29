@@ -50,7 +50,7 @@ class Task3(Task1):
     def init_ui(self) -> None:
         self.options_bar \
             .with_area() \
-            .with_interval(-10, 10) \
+            .with_int_options_v(-10, 10) \
             .with_int_option('lim_min_y', -10) \
             .with_int_option('lim_max_y', 10) \
             .with_button('Нарисовать', self.draw_chart)
@@ -60,8 +60,8 @@ class Task3(Task1):
         oy = int(self.options_bar.area.left_top.y.input.text())
         max_x = int(self.options_bar.area.right_bottom.x.input.text())
         max_y = int(self.options_bar.area.right_bottom.y.input.text())
-        self.alpha = int(self.options_bar.interval.alpha.input.text())
-        self.beta = int(self.options_bar.interval.beta.input.text())
+        self.alpha = int(self.options_bar.v_options[0].top.input.text())
+        self.beta = int(self.options_bar.v_options[0].bottom.input.text())
         self.lim_min_y = int(self.options_bar.options[0].input.text())
         self.lim_max_y = int(self.options_bar.options[1].input.text())
 

@@ -1,19 +1,21 @@
 import sys
 from typing import Callable
 
+from PyQt5.QtWidgets import QApplication, QMainWindow, QAction
+
 from task1 import Task1
 from task2 import Task2
 from task3 import Task3
-from PyQt5.QtWidgets import QApplication, QMainWindow, QAction
+from task4 import Task4
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("КГГ")
-        self.setGeometry(200, 120, 1000, 700)
-        self.tasks = [Task1, Task2, Task3]
-        self.setCentralWidget(self.tasks[2](self))
+        self.setGeometry(200, 120, 1240, 820)
+        self.tasks = [Task1, Task2, Task3, Task4]
+        self.setCentralWidget(self.tasks[3](self))
         self.init_ui()
 
     def init_ui(self) -> None:

@@ -1,5 +1,5 @@
-from PyQt5.QtGui import QPixmap, QImage, QPainter, QColor, QPen, QFont
 from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtGui import QPixmap, QImage, QPainter, QColor, QPen, QFont
 from PyQt5.QtWidgets import QScrollArea, QLabel, QWidget
 
 
@@ -10,7 +10,7 @@ class Offset:
 
 
 class IGridPainter:
-    def draw(self, painter: QPainter, step: int = 40) -> None:
+    def draw(self, painter: QPainter) -> None:
         raise NotImplementedError()
 
 
@@ -25,8 +25,7 @@ class Chart:
         self.image = QImage(width, height, image_format)
         self._painter: QPainter = None
 
-    @property
-    def painter(self) -> QPainter:
+    def create_painter(self) -> QPainter:
         self._painter = QPainter(self.image)
         self._painter.setPen(QPen(self.color, self.pen_size))
 
@@ -63,11 +62,12 @@ class ChartArea(QScrollArea):
 
 class ChartBackgroundPainter:
     def __init__(self, chart: Chart, offset: Offset = Offset(80, 40),
-                 h_axis: str = 'x', v_axis: str = 'y'):
-        self.h_axis = h_axis
-        self.v_axis = v_axis
+                 h_axis: str = 'x', v_axis: str = 'y', revers: bool = False):
         self.chart = chart
         self.offset = offset
+        self.h_axis = h_axis
+        self.v_axis = v_axis
+        self.reversed = revers
         self.size = QSize(chart.width + offset.x * 2,
                           chart.height + offset.y * 2)
 
@@ -85,17 +85,29 @@ class ChartBackgroundPainter:
 
     def draw_axis(self, painter: QPainter) -> None:
         width, height = self.size.width(), self.size.height()
-        oxy, oyx = height - self.offset.y, self.offset.x
+        ox_y = self.offset.y if self.reversed else height - self.offset.y
+        oy_x = self.offset.x
 
         painter.setPen(QPen(Qt.black, 2))
         painter.setFont(QFont('Arial', 10, 75))
 
-        painter.drawLine(self.offset.x, oxy, width, oxy)
-        painter.drawLine(width, oxy, width - 10, oxy - 4)
-        painter.drawLine(width, oxy, width - 10, oxy + 4)
-        painter.drawText(width - 20, height - self.offset.y + 20, self.h_axis)
+        if self.reversed:
+            painter.drawLine(oy_x, ox_y, width, ox_y)
+            painter.drawLine(width, ox_y, width - 10, ox_y - 4)
+            painter.drawLine(width, ox_y, width - 10, ox_y + 4)
+            painter.drawText(width - 20, ox_y - 10, self.h_axis)
 
-        painter.drawLine(oyx, height - self.offset.y, oyx, 0)
-        painter.drawLine(oyx, 0, oyx - 4, 10)
-        painter.drawLine(oyx, 0, oyx + 4, 10)
-        painter.drawText(self.offset.x + 10, 15, self.v_axis)
+            painter.drawLine(oy_x, self.offset.y, oy_x, height)
+            painter.drawLine(oy_x, height, oy_x - 4, height - 10)
+            painter.drawLine(oy_x, height, oy_x + 4, height - 10)
+            painter.drawText(oy_x - 20, height - 15, self.v_axis)
+        else:
+            painter.drawLine(oy_x, ox_y, width, ox_y)
+            painter.drawLine(width, ox_y, width - 10, ox_y - 4)
+            painter.drawLine(width, ox_y, width - 10, ox_y + 4)
+            painter.drawText(width - 20, ox_y + 20, self.h_axis)
+
+            painter.drawLine(oy_x, ox_y, oy_x, 0)
+            painter.drawLine(oy_x, 0, oy_x - 4, 10)
+            painter.drawLine(oy_x, 0, oy_x + 4, 10)
+            painter.drawText(oy_x + 10, 15, self.v_axis)

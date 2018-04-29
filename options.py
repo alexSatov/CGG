@@ -1,5 +1,5 @@
-from PyQt5.QtGui import QIntValidator, QPixmap
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIntValidator, QPixmap
 from PyQt5.QtWidgets import QWidget, QLineEdit, QVBoxLayout, QHBoxLayout, \
     QLabel, QPushButton, QLayout
 
@@ -9,8 +9,8 @@ class OptionsBar(QWidget):
         super().__init__(task_widget)
         self.task_widget = task_widget
         self.area = None
-        self.interval = None
         self.options = []
+        self.v_options = []
         self.buttons = []
         self.layout = QHBoxLayout()
         self.layout.setSizeConstraint(QLayout.SetFixedSize)
@@ -22,9 +22,12 @@ class OptionsBar(QWidget):
 
         return self
 
-    def with_interval(self, alpha=1, beta=10):
-        self.interval = IntervalOptions(alpha, beta)
-        self.layout.addLayout(self.interval)
+    def with_int_options_v(self, top=1, bottom=10,
+                           top_name='α', bottom_name='β', min=-10000):
+        v_option = VerticalIntOption(top, bottom, top_name, bottom_name, min)
+
+        self.v_options.append(v_option)
+        self.layout.addLayout(v_option)
 
         return self
 
@@ -54,6 +57,11 @@ class OptionsBar(QWidget):
 
         return self
 
+    def clear(self):
+        for i in range(self.layout.count() - 1, -1, -1):
+            item = self.layout.takeAt(i)
+            self.layout.removeItem(item)
+
 
 class AreaOptions(QHBoxLayout):
     def __init__(self):
@@ -77,14 +85,14 @@ class AreaOptions(QHBoxLayout):
         self.addLayout(self.right_bottom)
 
 
-class IntervalOptions(QVBoxLayout):
-    def __init__(self, alpha, beta):
+class VerticalIntOption(QVBoxLayout):
+    def __init__(self, top, bottom, top_name, bottom_name, min):
         super().__init__()
-        self.alpha = IntOption('α', alpha)
-        self.beta = IntOption('β', beta)
+        self.top = IntOption(top_name, top, min)
+        self.bottom = IntOption(bottom_name, bottom, min)
 
-        self.addLayout(self.alpha)
-        self.addLayout(self.beta)
+        self.addLayout(self.top)
+        self.addLayout(self.bottom)
 
 
 class IntOption(QHBoxLayout):

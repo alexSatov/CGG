@@ -1,10 +1,9 @@
 from typing import Callable
 
-from chart import ChartArea, Chart
-from options import OptionsBar
-
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
 
+from chart import ChartArea, Chart
+from options import OptionsBar
 
 Func = Callable[[float], float]
 
