@@ -58,6 +58,9 @@ class OptionsBar(QWidget):
         return self
 
     def clear(self):
+        self.options = []
+        self.v_options = []
+        self.buttons = []
         for i in range(self.layout.count() - 1, -1, -1):
             item = self.layout.takeAt(i)
             self.layout.removeItem(item)

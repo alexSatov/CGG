@@ -120,17 +120,16 @@ class Task1(Task):
 
 
 class GridPainter(IGridPainter):
-    def __init__(self, task: Task1, offset: Offset):
+    def __init__(self, task: Task1, offset: Offset, step: int = 40):
         self.min_y = task.min_y
         self.max_y = task.max_y
         self.width = task.width
         self.height = task.height
         self.f_xx_x = task.f_xx_x
         self.offset = offset
-        self.step = 40
+        self.step = step
 
     def draw(self, painter: QPainter) -> None:
-        step = self.step
         dy = self.min_y - self.max_y
         is_constant = self.min_y == self.max_y
         right_border = self.width + self.offset.x
@@ -139,13 +138,13 @@ class GridPainter(IGridPainter):
         painter.setPen(QPen(Qt.gray, 1))
         painter.setFont(QFont('Arial', 8))
 
-        for xx in range(self.offset.x, right_border, step):
+        for xx in range(self.offset.x, right_border, self.step):
             x = self.f_xx_x[xx - self.offset.x]
-            rect = QRect(xx - step / 2, bottom_border + 8, step, 14)
+            rect = QRect(xx - self.step / 2, bottom_border + 8, self.step, 14)
             painter.drawLine(xx, self.offset.y, xx, bottom_border)
             painter.drawText(rect, Qt.AlignHCenter, '%.2f' % x)
 
-        for yy in range(self.offset.y, bottom_border, step):
+        for yy in range(self.offset.y, bottom_border, self.step):
             yy = self.height + self.offset.y - yy
             back_yy = yy + self.offset.y
             rect = QRect(0, back_yy - 7, self.offset.x - 8, 14)

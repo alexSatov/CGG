@@ -15,7 +15,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("КГГ")
         self.setGeometry(200, 120, 1240, 820)
         self.tasks = [Task1, Task2, Task3, Task4]
-        self.setCentralWidget(self.tasks[3](self))
+        self.setCentralWidget(self.tasks[2](self))
         self.init_ui()
 
     def init_ui(self) -> None:

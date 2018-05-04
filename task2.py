@@ -108,15 +108,15 @@ class Task2(Task):
 
 
 class GridPainter(IGridPainter):
-    def __init__(self, task: Task2, offset: Offset):
+    def __init__(self, task: Task2, offset: Offset, step: int = 40):
         self.task = task
         self.offset = offset
-        self.step = 40
+        self.step = step
 
-    def draw(self, painter: QPainter, step: int = 40) -> None:
+    def draw(self, painter: QPainter) -> None:
         width, height = self.task.width + self.offset.x * 2, \
                         self.task.height + self.offset.y * 2
-        x0, y0, step = width / 2, height / 2, self.step
+        x0, y0 = width / 2, height / 2
         bottom_border = height - self.offset.y
 
         painter.setPen(QPen(Qt.gray, 1))

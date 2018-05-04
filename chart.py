@@ -15,11 +15,12 @@ class IGridPainter:
 
 
 class Chart:
-    def __init__(self, width, height, color: QColor = Qt.blue,
+    def __init__(self, width: int, height: int, color: QColor = Qt.blue,
                  pen_size: int = 3, image_format: int = QImage.Format_ARGB32):
         self.width = width
         self.height = height
         self.color = color
+        self.colors = [color]
         self.pen_size = pen_size
         self.image_format = image_format
         self.image = QImage(width, height, image_format)
@@ -41,7 +42,7 @@ class Chart:
             for y in range(self.height):
                 color = chart.pixelColor(x, y)
 
-                if color == self.color:
+                if color in self.colors:
                     background.setPixelColor(x + offset.x, y + offset.y, color)
 
         self.image = background
