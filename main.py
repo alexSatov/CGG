@@ -7,6 +7,8 @@ from task1 import Task1
 from task2 import Task2
 from task3 import Task3
 from task4 import Task4
+from task5 import Task5
+from task6 import Task6
 
 
 class MainWindow(QMainWindow):
@@ -14,8 +16,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("КГГ")
         self.setGeometry(200, 120, 1240, 820)
-        self.tasks = [Task1, Task2, Task3, Task4]
-        self.setCentralWidget(self.tasks[2](self))
+        self.tasks = [Task1, Task2, Task3, Task4, Task5, Task6]
+        self.setCentralWidget(self.tasks[4](self))
         self.init_ui()
 
     def init_ui(self) -> None:
